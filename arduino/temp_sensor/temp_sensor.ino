@@ -1,66 +1,29 @@
 #include <OneWire.h>
+#include <DallasTemperature.h>
 
-int DS18S20_Pin = 2; //Initializing the sensor
+#define ONE_WIRE_BUS 2
 
-OneWire ds(DS18S20);
+OneWire oneWire(ONE_WIRE_BUS);
 
+DallasTemperature sensors(&oneWire);
+
+float Celcius = 0;
+float Fahrenheit = 0;
 void setup(void)
 {
+
   Serial.begin(9600);
+  sensors.begin();
 }
 
 void loop(void)
 {
-  float temperature = getTemp();
-  Serial.println(temperature);
+  sensors.requestTemperatures();
+  Celcius = sensors.getTempCByIndex(0);
+  Fahrenheit = sensors.toFahrenheit(Celcius);
+  Serial.print(" C  ");
+  Serial.print(Celcius);
+  Serial.print(" F  ");
+  Serial.println(Fahrenheit);
+  delay(1000);
 }
-
-float getTemp() //This is a function that 
-//returns the value of the sensor in Celsius
-{
-  byte data[12];
-  byte data[8];
-
-  if(!ds.search(addr))
-  {
-    ds.reset_search();
-    return -1000;
-  }
-  
-  if(OneWire::crc8(addr, 7) != addr[7])
-  {
-    Serial.println("CRC is not valid!");
-    return -1000;
-  }
-
-  if(addr[0] != 0x10 && addr[0] != 0x28)
-  {
-    Serial.print("Device is not recognized");
-    return -1000;
-  }
-
-  ds.reset();
-  ds.select(addr);
-  ds.write(0x44,1);
-  
-  byte present = ds.reset();
-  ds.select(addr);
-  ds.write(0xBE);
-
-  for(int i = 0; i < 9; i++)
-  {
-    data[i] = ds.read();
-  }
-
-  ds.reset_search();
-
-  byte MSD = data[1];
-  byte LSB = data[0];
-
-  float tempRead = ((MSB << 8) | LSB);
-  float TemperatureSum = tempRead / 16;
-
-  return TemperatureSum;
-}
-
-
